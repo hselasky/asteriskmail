@@ -102,75 +102,66 @@ handle_pop3_connection(int fd)
 			fprintf(io, "+OK %d %d\r\n", num - 1, bytes);
 		} else if (handle_compare(line, "LIST") == 0) {
 			struct am_message *pamm;
-			int match;
 			int bytes;
 			int num;
 
-			if (line[4] != 0)
-				match = atoi(line + 5);
-			else
-				match = -1;
-
-			num = 1;
-			bytes = 0;
-			pamm = NULL;
-			while (handle_foreach_message(&pamm)) {
-				bytes += pamm->bytes;
-				if (num == match)
-					break;
-				num++;
-			}
-
-			if (match == -1) {
-				fprintf(io, "+OK %d messages (%d octets)\r\n", num - 1, bytes);
+			if (line[4] == 0) {
+				/* give all messages a valid number */
 				num = 1;
+				bytes = 0;
 				pamm = NULL;
 				while (handle_foreach_message(&pamm)) {
-					fprintf(io, "%d %d\r\n", num, pamm->bytes);
-					num++;
+					pamm->message_id = num++;
+					bytes += pamm->bytes;
 				}
+				fprintf(io, "+OK %d messages (%d octets)\r\n", num - 1, bytes);
+				pamm = NULL;
+				while (handle_foreach_message(&pamm))
+					fprintf(io, "%d %d\r\n", pamm->message_id, pamm->bytes);
 				fprintf(io, ".\r\n");
 			} else {
-				if (num == match)
-					fprintf(io, "+OK %d %d\r\n", match, bytes);
-				else
+				num = atoi(line + 5);
+				bytes = 0;
+				pamm = NULL;
+				while (handle_foreach_message(&pamm)) {
+					if (pamm->message_id == num) {
+						bytes = pamm->bytes;
+						fprintf(io, "+OK %d %d\r\n", num, bytes);
+						break;
+					}
+				}
+				if (pamm == NULL)
 					fprintf(io, "-ERR No such message\r\n");
 			}
 		} else if (handle_compare(line, "RETR ") == 0) {
 			struct am_message *pamm;
-			int match;
 			int num;
 
-			match = atoi(line + 5);
-			num = 1;
+			num = atoi(line + 5);
 			pamm = NULL;
 			while (handle_foreach_message(&pamm)) {
-				if (num == match) {
+				if (num == pamm->message_id) {
 					fprintf(io, "+OK %d octets\r\n", pamm->bytes);
 					fwrite(pamm->data, 1, pamm->bytes, io);
 					fprintf(io, "\r\n.\r\n");
 					break;
 				}
-				num++;
 			}
 			if (pamm == NULL)
 				fprintf(io, "-ERR Non-existing message\r\n");
 
 		} else if (handle_compare(line, "DELE ") == 0) {
 			struct am_message *pamm;
-			int match;
 			int num;
 
-			match = atoi(line + 5);
-			num = 1;
+			num = atoi(line + 5);
 			pamm = NULL;
 			while (handle_foreach_message(&pamm)) {
-				if (num == match) {
+				if (num == pamm->message_id) {
 					fprintf(io, "+OK message %d deleted\r\n", num);
 					handle_delete_message(pamm);
 					break;
 				}
-				num++;
 			}
 			if (pamm == NULL)
 				fprintf(io, "-ERR Non-existing message\r\n");

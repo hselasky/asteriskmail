@@ -54,6 +54,7 @@
 
 struct am_message {
 	TAILQ_ENTRY(am_message) entry;
+	int	message_id;
 	int	bytes;
 	void   *data;
 };
