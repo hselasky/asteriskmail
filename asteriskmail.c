@@ -34,7 +34,22 @@ char	hostname[128];
 const char *am_username = "asteriskmail";
 const char *am_password;
 
-char *
+extern char *
+strafter(char *big, const char *small)
+{
+	char *match = strstr(big, small);
+
+	if (match == NULL) {
+		if (small[0] == '\r' && small[1] == '\n')
+			match = strstr(big, small + 2);
+		if (match != big)
+			return (NULL);
+		return (match + strlen(small) - 2);
+	}
+	return (match + strlen(small));
+}
+
+char   *
 handle_read_line(FILE *io)
 {
 	char buffer[2];
@@ -79,6 +94,79 @@ handle_foreach_message(struct am_message **ppam)
 	*ppam = ptr;
 
 	return (ptr != NULL);
+}
+
+void
+handle_import(struct am_message *pam)
+{
+	char *hdr;
+	char *gsm;
+	char *b64;
+	char ch;
+	int x;
+	int y;
+
+	hdr = strstr(pam->data, "\r\n\r\n");
+	if (hdr == NULL)
+		return;
+
+	gsm = strafter(pam->data, "\r\nContent-Type: text/html; charset=gsm-7\r\n");
+	if (gsm == NULL || gsm > hdr)
+		return;
+	while (1) {
+		ch = *--gsm;
+		*gsm = 0;
+		if (ch == 'C')
+			break;
+	}
+	b64 = strafter(pam->data, "\r\nContent-Transfer-Encoding: base64\r\n");
+	if (b64 == NULL || b64 > hdr)
+		return;
+	while (1) {
+		ch = *--b64;
+		*b64 = 0;
+		if (ch == 'C')
+			break;
+	}
+	for (y = x = pam->bytes - 1; x != -1; x--) {
+		ch = ((uint8_t *)pam->data)[x];
+		if (ch == 0)
+			continue;
+		((uint8_t *)pam->data)[y--] = ch;
+	}
+	/* fill rest of beginning with zero */
+	while (y > -1)
+		((uint8_t *)pam->data)[y--] = 0;
+
+	strcpy(pam->data, "Content-Type: text/html; charset=iso-8859-1\r\n");
+
+	/* remove zeroed bytes */
+	for (x = y = 0; x != pam->bytes; x++) {
+		if (((uint8_t *)pam->data)[x] == 0)
+			continue;
+		((uint8_t *)pam->data)[y++] = ((uint8_t *)pam->data)[x];
+	}
+	((uint8_t *)pam->data)[y++] = 0;
+
+	/* convert data format */
+	hdr = strstr(pam->data, "\r\n\r\n");
+	if (hdr == NULL)
+		return;
+
+	hdr += 4;
+
+	gsm = hdr;
+
+	while (1) {
+		x = base64_get_iso8859_latin1(&hdr);
+		if (x < 0)
+			break;
+		*gsm++ = x;
+	}
+	*gsm++ = 0;
+
+	/* compute new length - ignore rest */
+	pam->bytes = strlen(pam->data) + 1;
 }
 
 int

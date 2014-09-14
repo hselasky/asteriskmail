@@ -97,6 +97,9 @@ handle_smtp_connection(int fd)
 			/* zero terminate message */
 			if (handle_append_message(pamm, 0) != 0)
 				goto done;
+			/* import GSM characters */
+			handle_import(pamm);
+			/* store message */
 			handle_insert_message(pamm);
 			pamm = NULL;
 			fprintf(io, "250 Ok\r\n");
