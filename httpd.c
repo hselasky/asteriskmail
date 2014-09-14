@@ -571,7 +571,7 @@ handle_httpd_connection(int fd)
 
 			ptr = hdr;
 			if (ptr != NULL) {
-				ptr += 5;
+				ptr += 4;
 				fprintf(io, "<meta charset=\"ISO-8859-1\">");
 
 				/* reset parsing */
