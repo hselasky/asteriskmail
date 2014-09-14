@@ -27,8 +27,8 @@
 
 #include "asteriskmail.h"
 
-static int base64_bits;
-static int base64_value;
+static uint32_t base64_bits;
+static uint32_t base64_value;
 
 const int
 base64_get(const char **pptr)
@@ -62,12 +62,12 @@ base64_get(const char **pptr)
 	else
 		return (-1);
 
-	base64_value += (int)ch << base64_bits;
+	base64_value <<= 6;
+	base64_value += (ch & 0x3F);
 	base64_bits += 6;
 
 	if (base64_bits >= 8) {
-		ch = base64_value;
-		base64_value >>= 8;
+		ch = (base64_value >> (base64_bits - 8));
 		base64_bits -= 8;
 		return ((uint8_t)ch);
 	}
@@ -511,7 +511,9 @@ handle_httpd_connection(int fd)
 	    "Content-Type: text/html\r\n"
 	    "Server: asteriskmail/1.0\r\n"
 	    "\r\n"
-	    "<html><head><title>AsteriskMail Inbox</title></head>"
+	    "<html><head><title>AsteriskMail Inbox</title>"
+	    "<meta HTTP-EQUIV=\"refresh\" CONTENT=\"120\"></meta>"
+	    "</head>"
 	    "<h1>List of incoming messages</h1><br>";
 	len = strlen(ptr);
 
