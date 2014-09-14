@@ -535,7 +535,7 @@ handle_httpd_connection(int fd)
 			x++;
 			fprintf(io, "<h2>Message %d of %d: ", x, num);
 
-			hdr = strstr(pamm->data, "\r\n.\r\n");
+			hdr = strstr(pamm->data, "\r\n\r\n");
 
 			ptr = strstr(pamm->data, "Subject: ");
 			if (ptr != NULL && ptr < hdr) {
