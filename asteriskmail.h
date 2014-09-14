@@ -60,7 +60,7 @@ struct am_message {
 };
 
 extern const int base64_get(char **);
-extern const char base64_get_iso8859_latin1(char **);
+extern const int base64_get_iso8859_latin1(char **);
 extern char *handle_read_line(FILE *io);
 extern int handle_extract_receip(const char *, char *, int);
 extern int handle_compare(const char *, const char *);

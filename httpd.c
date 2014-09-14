@@ -76,7 +76,7 @@ base64_get(char **pptr)
 	}
 }
 
-const char
+const int
 base64_get_iso8859_latin1(char **pptr)
 {
 	int ch;
@@ -1139,7 +1139,7 @@ next_line:
 					ch = base64_get_iso8859_latin1(&ptr);
 					if (ch < 0)
 						break;
-					if (isprint(ch) != 0) {
+					if ((ch & 0x80) != 0 || isprint(ch) != 0) {
 						buf[0] = ch;
 						if (fwrite(buf, 1, 1, io) != 1)
 							goto done;
