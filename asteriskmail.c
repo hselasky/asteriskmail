@@ -34,7 +34,7 @@ char	hostname[128];
 const char *am_username = "asteriskmail";
 const char *am_password;
 
-const char *
+char *
 handle_read_line(FILE *io)
 {
 	char buffer[2];
