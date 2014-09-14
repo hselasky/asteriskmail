@@ -43,35 +43,36 @@ base64_get(const char **pptr)
 	}
 	ptr = *pptr;
 
-	ch = *ptr;
-	if (ch == 0)
-		return (-1);
+	while (1) {
+		ch = *ptr;
+		if (ch == 0)
+			return (-1);
 
-	*pptr = ++ptr;
+		*pptr = ++ptr;
 
-	if (ch >= 'A' && ch <= 'Z')
-		ch -= 'A';
-	else if (ch >= 'a' && ch <= 'z')
-		ch -= 'a' - 26;
-	else if (ch >= '0' && ch <= '9')
-		ch -= '0' - 52;
-	else if (ch == '+')
-		ch = 62;
-	else if (ch == '/')
-		ch = 63;
-	else
-		return (-1);
+		if (ch >= 'A' && ch <= 'Z')
+			ch -= 'A';
+		else if (ch >= 'a' && ch <= 'z')
+			ch -= 'a' - 26;
+		else if (ch >= '0' && ch <= '9')
+			ch -= '0' - 52;
+		else if (ch == '+')
+			ch = 62;
+		else if (ch == '/')
+			ch = 63;
+		else
+			return (-1);
 
-	base64_value <<= 6;
-	base64_value += (ch & 0x3F);
-	base64_bits += 6;
+		base64_value <<= 6;
+		base64_value += (ch & 0x3F);
+		base64_bits += 6;
 
-	if (base64_bits >= 8) {
-		ch = (base64_value >> (base64_bits - 8));
-		base64_bits -= 8;
-		return ((uint8_t)ch);
+		if (base64_bits >= 8) {
+			ch = (base64_value >> (base64_bits - 8));
+			base64_bits -= 8;
+			return ((uint8_t)ch);
+		}
 	}
-	return (0);
 }
 
 const char
@@ -584,7 +585,7 @@ handle_httpd_connection(int fd)
 					ch = base64_get_iso8859_latin1(&ptr);
 					if (ch < 0)
 						break;
-					if (ch != 0 && isprint(ch) != 0) {
+					if (isprint(ch) != 0) {
 						buf[0] = ch;
 						if (fwrite(buf, 1, 1, io) != 1)
 							goto done;
