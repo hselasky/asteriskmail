@@ -189,11 +189,12 @@ asteriskmail_usage(void)
 	fprintf(stderr,
 	    "\n"
 	    "\n" "asteriskmail - AsteriskMail v1.0, compiled %s %s"
-	    "\n" "usage: asteriskmail [-B] [-b 127.0.0.1] [-p 25] [-P 110] [-h]"
+	    "\n" "usage: asteriskmail [-B] [-b 127.0.0.1] [-p 25] [-P 110] [ -H 80] [-h]"
 	    "\n" "       -B            run in background"
 	    "\n" "       -b <addr>     bind address"
 	    "\n" "       -p <port>     SMTP bind port"
 	    "\n" "       -P <port>     POP3 bind port"
+	    "\n" "       -H <port>     HTTPD bind port"
 	    "\n" "       -h            show usage"
 	    "\n"
 	    __DATE__, __TIME__);
@@ -228,14 +229,16 @@ main(int argc, char **argv)
 {
 	const char *smtp_port = "25";
 	const char *pop3_port = "110";
+	const char *httpd_port = "80";
 	const char *host = "127.0.0.1";
 	int opt;
 	int npop3;
 	int nsmtp;
+	int nhttpd;
 
 	atexit(&do_exit);
 
-	while ((opt = getopt(argc, argv, "b:p:P:Bh")) != -1) {
+	while ((opt = getopt(argc, argv, "b:p:P:BhH:")) != -1) {
 		switch (opt) {
 		case 'b':
 			host = optarg;
@@ -245,6 +248,9 @@ main(int argc, char **argv)
 			break;
 		case 'P':
 			pop3_port = optarg;
+			break;
+		case 'H':
+			httpd_port = optarg;
 			break;
 		case 'B':
 			do_fork = 1;
@@ -278,8 +284,14 @@ main(int argc, char **argv)
 		errx(EX_SOFTWARE, "Could not bind to "
 		    "'%s' and '%s'\n", host, pop3_port);
 	}
+	nhttpd = asteriskmail_do_listen(host, httpd_port, ASTERISKMAIL_BUF_MAX,
+	    fds + nsmtp + npop3, ASTERISKMAIL_SOCK_MAX - nsmtp - npop3);
+	if (nhttpd < 1) {
+		errx(EX_SOFTWARE, "Could not bind to "
+		    "'%s' and '%s'\n", host, pop3_port);
+	}
 	while (1) {
-		int ns = nsmtp + npop3;
+		int ns = nsmtp + npop3 + nhttpd;
 		int c;
 		int f;
 
@@ -299,8 +311,10 @@ main(int argc, char **argv)
 				continue;
 			if (c < nsmtp)
 				handle_smtp_connection(f);
-			else
+			else if (c < nsmtp + npop3)
 				handle_pop3_connection(f);
+			else
+				handle_httpd_connection(f);
 			close(f);
 		}
 	}

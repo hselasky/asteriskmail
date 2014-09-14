@@ -59,6 +59,8 @@ struct am_message {
 	void   *data;
 };
 
+extern const int base64_get(const char **);
+extern const char base64_get_iso8859_latin1(const char **);
 extern const char *handle_read_line(FILE *io);
 extern int handle_extract_receip(const char *, char *, int);
 extern int handle_compare(const char *, const char *);
@@ -69,6 +71,7 @@ extern int handle_append_message(struct am_message *, uint8_t);
 extern struct am_message *handle_create_message(void);
 extern void handle_smtp_connection(int);
 extern void handle_pop3_connection(int);
+extern void handle_httpd_connection(int);
 extern char hostname[128];
 extern const char *am_username;
 extern const char *am_password;

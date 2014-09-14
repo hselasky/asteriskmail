@@ -83,7 +83,8 @@ handle_smtp_connection(int fd)
 				    u.buffer[4] == '\n')
 					break;
 
-				if (handle_append_message(pamm, u.buffer[0]) != 0)
+				if (u.buffer[0] != 0 &&
+				    handle_append_message(pamm, u.buffer[0]) != 0)
 					goto done;
 
 				u.buffer[0] = u.buffer[1];
@@ -93,6 +94,9 @@ handle_smtp_connection(int fd)
 				if (fread(u.buffer + 4, 1, 1, io) != 1)
 					goto done;
 			}
+			/* zero terminate message */
+			if (handle_append_message(pamm, 0) != 0)
+				goto done;
 			handle_insert_message(pamm);
 			pamm = NULL;
 			fprintf(io, "250 Ok\r\n");
