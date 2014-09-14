@@ -1095,6 +1095,8 @@ next_line:
 			hdr = strstr(pamm->data, "\r\n\r\n");
 
 			ptr = strafter(pamm->data, "\r\nSubject: ");
+			if (ptr == NULL)
+				ptr = strafter(pamm->data, "\nSubject: ");
 			if (ptr != NULL && ptr <= hdr) {
 				while (1) {
 					char ch;
@@ -1109,6 +1111,8 @@ next_line:
 			fprintf(io, " - ");
 
 			ptr = strafter(pamm->data, "\r\nFrom: ");
+			if (ptr == NULL)
+				ptr = strafter(pamm->data, "\nFrom: ");
 			if (ptr != NULL && ptr <= hdr) {
 				while (1) {
 					char ch;

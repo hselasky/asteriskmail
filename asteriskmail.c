@@ -42,9 +42,13 @@ strafter(char *big, const char *small)
 	if (match == NULL) {
 		if (small[0] == '\r' && small[1] == '\n')
 			match = strstr(big, small + 2);
-		if (match != big)
-			return (NULL);
-		return (match + strlen(small) - 2);
+		if (match == big)
+			return (match + strlen(small) - 2);
+		if (small[0] == '\n')
+			match = strstr(big, small + 1);
+		if (match == big)
+			return (match + strlen(small) - 1);
+		return (NULL);
 	}
 	return (match + strlen(small));
 }
@@ -111,17 +115,23 @@ handle_import(struct am_message *pam)
 		return;
 
 	gsm = strafter(pam->data, "\r\nContent-Type: text/html; charset=gsm-7\r\n");
+	if (gsm == NULL)
+		gsm = strafter(pam->data, "\nContent-Type: text/html; charset=gsm-7\n");
 	if (gsm == NULL || gsm > hdr)
 		return;
+
+	b64 = strafter(pam->data, "\r\nContent-Transfer-Encoding: base64\r\n");
+	if (b64 == NULL)
+		b64 = strafter(pam->data, "\nContent-Transfer-Encoding: base64\n");
+	if (b64 == NULL || b64 > hdr)
+		return;
+
 	while (1) {
 		ch = *--gsm;
 		*gsm = 0;
 		if (ch == 'C')
 			break;
 	}
-	b64 = strafter(pam->data, "\r\nContent-Transfer-Encoding: base64\r\n");
-	if (b64 == NULL || b64 > hdr)
-		return;
 	while (1) {
 		ch = *--b64;
 		*b64 = 0;
