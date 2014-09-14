@@ -1129,24 +1129,13 @@ next_line:
 			ptr = hdr;
 			if (ptr != NULL) {
 				ptr += 4;
+				len = strlen(ptr);
+
 				fprintf(io, "<meta charset=\"ISO-8859-1\">");
 
-				/* reset parsing */
-				base64_get_iso8859_latin1(NULL);
+				if (fwrite(ptr, 1, len, io) != len)
+					goto done;
 
-				while (1) {
-					int ch;
-					uint8_t buf[1];
-
-					ch = base64_get_iso8859_latin1(&ptr);
-					if (ch < 0)
-						break;
-					if ((ch & 0x80) != 0 || isprint(ch) != 0) {
-						buf[0] = ch;
-						if (fwrite(buf, 1, 1, io) != 1)
-							goto done;
-					}
-				}
 				fprintf(io, "</meta><br>");
 			}
 		}

@@ -167,6 +167,9 @@ handle_import(struct am_message *pam)
 
 	gsm = hdr;
 
+	/* reset parsing */
+	base64_get_iso8859_latin1(NULL);
+
 	while (1) {
 		x = base64_get_iso8859_latin1(&hdr);
 		if (x < 0)
