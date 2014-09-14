@@ -39,7 +39,7 @@ base64_get(const char **pptr)
 	if (pptr == NULL) {
 		base64_bits = 0;
 		base64_value = 0;
-		return (0);
+		return (-1);
 	}
 	ptr = *pptr;
 
@@ -575,7 +575,7 @@ handle_httpd_connection(int fd)
 				fprintf(io, "<meta charset=\"ISO-8859-1\">");
 
 				/* reset parsing */
-				base64_get(NULL);
+				base64_get_iso8859_latin1(NULL);
 
 				while (1) {
 					int ch;
@@ -584,7 +584,7 @@ handle_httpd_connection(int fd)
 					ch = base64_get_iso8859_latin1(&ptr);
 					if (ch < 0)
 						break;
-					if (isprint(ch)) {
+					if (ch != 0 && isprint(ch) != 0) {
 						buf[0] = ch;
 						if (fwrite(buf, 1, 1, io) != 1)
 							goto done;
