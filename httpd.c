@@ -922,6 +922,7 @@ handle_httpd_decode_string(char *ptr)
 void
 handle_httpd_connection(int fd)
 {
+	static int curr_sms_id;
 	struct am_message *pamm;
 	char message_buf[512];
 	char system_cmd[512 + 128];
@@ -951,6 +952,7 @@ next_line:
 		if (page < 0 && strstr(line, "GET /send_sms.cgi?") == line) {
 			char *phone;
 			char *message;
+			char *id;
 
 			page = 1;
 
@@ -958,22 +960,31 @@ next_line:
 			if (phone == NULL)
 				phone = strstr(line, "?phone=");
 
+			id = strstr(line, "&id=");
+			if (id == NULL)
+				id = strstr(line, "?id=");
+
 			message = strstr(line, "&message=");
 			if (message == NULL)
 				message = strstr(line, "?message=");
 
-			if (phone == NULL || message == NULL) {
+			if (phone == NULL || message == NULL || id == NULL) {
 				page = 2;
 				goto next_line;
 			}
 			phone += 7;
 			message += 9;
+			id += 4;
 
 			handle_httpd_decode_string(phone);
 			handle_httpd_decode_string(message);
+			handle_httpd_decode_string(id);
 
-			printf("%s %s\n", phone, message);
-
+			ptr = id;
+			if (*ptr == 0 || atoi(id) != curr_sms_id) {
+				page = 2;
+				goto next_line;
+			}
 			ptr = phone;
 			if (*ptr == 0) {
 				page = 2;
@@ -1018,10 +1029,17 @@ next_line:
 				goto next_line;
 			}
 			/* nice operation a bit */
-			usleep(1000000);
+			usleep(250000);
+
+			curr_sms_id++;
+			if (curr_sms_id >= 10000)
+				curr_sms_id = 0;
+
 		} else if (page < 0 && (strstr(line, "GET / ") == line ||
 		    strstr(line, "GET /index.html") == line)) {
 			page = 4;
+		} else if (page < 0 && strstr(line, "GET /sms_form.html") == line) {
+			page = 5;
 		}
 	}
 
@@ -1043,7 +1061,7 @@ next_line:
 		    "\r\n"
 		    "<html><head><title>AsteriskMail Inbox</title>"
 		    "</head>"
-		    "<h1>Invalid SMS message or phone number. Cannot send SMS!</h1><br>"
+		    "<h1>ERROR: Invalid SMS message, phone number or ID.<br><a HREF=\"sms_form.html\">Click here to retry</a></h1><br>"
 		    "</html>");
 		goto done;
 	case 3:
@@ -1053,8 +1071,34 @@ next_line:
 		    "\r\n"
 		    "<html><head><title>AsteriskMail Inbox</title>"
 		    "</head>"
-		    "<h1>Error sending SMS!</h1><br>"
+		    "<h1>ERROR: Sending SMS.<br><a HREF=\"sms_form.html\">Click here to retry</a></h1><br>"
 		    "</html>");
+		goto done;
+	case 5:
+		fprintf(io, "HTTP/1.0 200 OK\r\n"
+		    "Content-Type: text/html\r\n"
+		    "Server: asteriskmail/1.0\r\n"
+		    "\r\n"
+		    "<html><head><title>AsteriskMail Send SMS</title>"
+		    "</head>"
+		    "<br><br><form action=\"send_sms.cgi\" id=\"smsform\" accept-charset=\"ISO-8859-1\">"
+		    "<table bgcolor=\"#c0c0c0\">"
+		    "<tr><th COLSPAN=\"2\">Send SMS</th></tr>"
+		    "<tr><th>"
+		    "<div align=\"right\">Mobile:</div></th><th><div align=\"left\">"
+		    "<input type=\"tel\" maxlength=\"30\" name=\"phone\"></div></th></tr>"
+		    "<tr><th>"
+		    "<div align=\"right\">Message:</div></th><th><div align=\"left\">"
+		    "<textarea maxlength=\"130\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
+		    "wrap=\"logical\" rows=\"12\" cols=\"32\">"
+		    "</textarea></div></th></tr>"
+		    "<tr><th></th><th>"
+		    "<div align=\"right\"><input type=\"submit\" value=\"Submit\"></div>"
+		    "</th></table>"
+		    "<input type=\"hidden\" name=\"id\" value=\"%d\"> "
+		    "</form>"
+		    "<br><a HREF=\"index.html\">Click here to go back</a>"
+		    "</html>", curr_sms_id);
 		goto done;
 	case 4:
 		break;
@@ -1142,21 +1186,7 @@ next_line:
 	}
 
 	fprintf(io,
-	    "<br><br><form action=\"send_sms.cgi\" id=\"smsform\" accept-charset=\"ISO-8859-1\">"
-	    "<table bgcolor=\"#c0c0c0\">"
-	    "<tr><th COLSPAN=\"2\">Send SMS</th></tr>"
-	    "<tr><th>"
-	    "<div align=\"right\">Mobile:</div></th><th><div align=\"left\">"
-	    "<input type=\"tel\" maxlength=\"30\" name=\"phone\"></div></th></tr>"
-	    "<tr><th>"
-	    "<div align=\"right\">Message:</div></th><th><div align=\"left\">"
-	    "<textarea maxlength=\"130\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
-	    "wrap=\"logical\" rows=\"12\" cols=\"32\">"
-	    "</textarea></div></th></tr>"
-	    "<tr><th></th><th>"
-	    "<div align=\"right\"><input type=\"submit\" value=\"Submit\"></div>"
-	    "</th></table>"
-	    "</form>"
+	    "<br><a HREF=\"sms_form.html\">Click here to send SMS</a>"
 	    "</html>");
 done:
 	if (io != NULL) {
