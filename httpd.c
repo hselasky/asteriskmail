@@ -1023,7 +1023,9 @@ next_line:
 			*hdr++ = 0;
 
 			snprintf(system_cmd, sizeof(system_cmd),
-			    "asterisk -rx \"dongle sms dongle0 %s \\\"%s\\\"\"", phone, message_buf);
+			    "/usr/local/sbin/asterisk"
+			    " -rx \"dongle sms dongle0 %s "
+			    "\\\"%s\\\"\"", phone, message_buf);
 			if (system(system_cmd) != 0) {
 				page = 3;
 				goto next_line;
@@ -1089,7 +1091,7 @@ next_line:
 		    "<input type=\"tel\" maxlength=\"30\" name=\"phone\"></div></th></tr>"
 		    "<tr><th>"
 		    "<div align=\"right\">Message:</div></th><th><div align=\"left\">"
-		    "<textarea maxlength=\"130\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
+		    "<textarea maxlength=\"140\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
 		    "wrap=\"logical\" rows=\"12\" cols=\"32\">"
 		    "</textarea></div></th></tr>"
 		    "<tr><th></th><th>"
