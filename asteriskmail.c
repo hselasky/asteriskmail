@@ -272,11 +272,11 @@ asteriskmail_do_listen(const char *host, const char *port, int buffer, struct po
 					pfd[ns++].fd = s;
 					continue;
 				}
+				close(s);
 				break;
 			}
 		}
 		close(s);
-		s = -1;
 	} while ((res0 = res0->ai_next) != NULL);
 
 	freeaddrinfo(res);
