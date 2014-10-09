@@ -290,9 +290,10 @@ asteriskmail_usage(void)
 	fprintf(stderr,
 	    "\n"
 	    "\n" "asteriskmail - AsteriskMail v1.0, compiled %s %s"
-	    "\n" "usage: asteriskmail [-B] [-b 127.0.0.1] [-p 25] [-P 110] [ -H 80] [-h]"
+	    "\n" "usage: asteriskmail [-B] [-L] [-b 127.0.0.1] [-p 25] [-P 110] [ -H 80] [-h]"
 	    "\n" "       -B            run in background"
 	    "\n" "       -b <addr>     bind address"
+	    "\n" "       -L            bind SMTP to localhost"
 	    "\n" "       -p <port>     SMTP bind port"
 	    "\n" "       -P <port>     POP3 bind port"
 	    "\n" "       -H <port>     HTTPD bind port"
@@ -336,10 +337,11 @@ main(int argc, char **argv)
 	int npop3;
 	int nsmtp;
 	int nhttpd;
+	int do_bind_localhost = 0;
 
 	atexit(&do_exit);
 
-	while ((opt = getopt(argc, argv, "b:p:P:BhH:")) != -1) {
+	while ((opt = getopt(argc, argv, "Lb:p:P:BhH:")) != -1) {
 		switch (opt) {
 		case 'b':
 			host = optarg;
@@ -355,6 +357,9 @@ main(int argc, char **argv)
 			break;
 		case 'B':
 			do_fork = 1;
+			break;
+		case 'L':
+			do_bind_localhost = 1;
 			break;
 		default:
 			asteriskmail_usage();
@@ -378,6 +383,16 @@ main(int argc, char **argv)
 	if (nsmtp < 1) {
 		errx(EX_SOFTWARE, "Could not bind to "
 		    "'%s' and '%s'\n", host, smtp_port);
+	}
+	if (do_bind_localhost != 0) {
+		int nsmtp_localhost;
+		nsmtp_localhost = asteriskmail_do_listen("127.0.0.1", smtp_port, ASTERISKMAIL_BUF_MAX,
+		    fds + nsmtp, ASTERISKMAIL_SOCK_MAX);
+		if (nsmtp_localhost < 1) {
+			errx(EX_SOFTWARE, "Could not bind to "
+			    "'127.0.0.1' and '%s'\n", smtp_port);
+		}
+		nsmtp += nsmtp_localhost;
 	}
 	npop3 = asteriskmail_do_listen(host, pop3_port, ASTERISKMAIL_BUF_MAX,
 	    fds + nsmtp, ASTERISKMAIL_SOCK_MAX - nsmtp);
