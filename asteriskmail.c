@@ -298,7 +298,7 @@ asteriskmail_usage(void)
 	    "\n" "       -P <port>     POP3 bind port"
 	    "\n" "       -H <port>     HTTPD bind port"
 	    "\n" "       -h            show usage"
-	    "\n"
+	    "\n",
 	    __DATE__, __TIME__);
 }
 
