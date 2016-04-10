@@ -1027,7 +1027,11 @@ next_line:
 			pamm = handle_create_message();
 			if (pamm != NULL) {
 				snprintf(smtpd_buf, sizeof(smtpd_buf),
-				    "Subject: SMS\r\nFrom: home\r\nTo:%s <%s>\r\n\r\n%s",
+				    "Subject: SMS\r\n"
+				    "From: home\r\n"
+				    "To: %s <%s>\r\n"
+				    "Content-Type: text/html; charset=iso-8859-1\r\n"
+				    "\r\n\r\n%s",
 				    phone, phone, message_buf);
 				ptr = smtpd_buf;
 				while (*ptr) {
