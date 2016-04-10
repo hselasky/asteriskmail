@@ -925,6 +925,7 @@ handle_httpd_connection(int fd)
 	static int curr_sms_id;
 	struct am_message *pamm;
 	char message_buf[512];
+	char smtpd_buf[512];
 	char system_cmd[512 + 128];
 	char *hdr;
 	char *ptr;
@@ -1022,14 +1023,32 @@ next_line:
 			}
 			*hdr++ = 0;
 
+			/* make a copy of outgoing messages */
+			pamm = handle_create_message();
+			if (pamm != NULL) {
+				snprintf(smtpd_buf, sizeof(smtpd_buf),
+				    "Subject: SMS\r\nFrom: home\r\nTo:%s <%s>\r\n\r\n%s",
+				    phone, phone, message_buf);
+				ptr = smtpd_buf;
+				while (*ptr) {
+					handle_append_message(pamm, *ptr);
+					ptr++;
+				}
+				/* zero terminate */
+				handle_append_message(pamm, *ptr);
+				handle_insert_message(pamm);
+			}
+
 			snprintf(system_cmd, sizeof(system_cmd),
 			    "/usr/local/sbin/asterisk"
 			    " -rx \"dongle sms dongle0 %s "
 			    "\\\"%s\\\"\"", phone, message_buf);
+
 			if (system(system_cmd) != 0) {
 				page = 3;
 				goto next_line;
 			}
+
 			/* nice operation a bit */
 			usleep(250000);
 
