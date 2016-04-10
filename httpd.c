@@ -1032,7 +1032,7 @@ next_line:
 				    "To: %s <%s>\r\n"
 				    "Content-Type: text/html; charset=iso-8859-1\r\n"
 				    "\r\n\r\n%s",
-				    phone, phone, message_buf);
+				    phone, phone, message);
 				ptr = smtpd_buf;
 				while (*ptr) {
 					handle_append_message(pamm, *ptr);
