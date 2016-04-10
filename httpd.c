@@ -1035,12 +1035,17 @@ next_line:
 				    phone, phone, message);
 				ptr = smtpd_buf;
 				while (*ptr) {
-					handle_append_message(pamm, *ptr);
+					if (handle_append_message(pamm, *ptr))
+						break;
 					ptr++;
 				}
 				/* zero terminate */
-				handle_append_message(pamm, *ptr);
-				handle_insert_message(pamm);
+				if (*ptr == 0 &&
+				    handle_append_message(pamm, 0) == 0) {
+					handle_insert_message(pamm);
+				} else {
+					handle_delete_message(pamm);
+				}
 			}
 
 			snprintf(system_cmd, sizeof(system_cmd),
