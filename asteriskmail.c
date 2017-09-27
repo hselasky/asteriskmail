@@ -190,12 +190,14 @@ handle_delete_message(struct am_message *pam)
 
 	free(pam->data);
 	free(pam);
+	return (0);
 }
 
 int
 handle_insert_message(struct am_message *pam)
 {
 	TAILQ_INSERT_TAIL(&head, pam, entry);
+	return (0);
 }
 
 int
