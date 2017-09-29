@@ -1148,7 +1148,9 @@ next_line:
 	    "Server: asteriskmail/1.0\r\n"
 	    "\r\n"
 	    "<html><head><title>AsteriskMail Inbox</title>"
-	    "<meta HTTP-EQUIV=\"refresh\" CONTENT=\"120\"></meta>"
+	    "<meta HTTP-EQUIV=\"refresh\" CONTENT=\"120\">"
+	    "<meta charset=\"UTF-8\">"
+	    "</meta>"
 	    "</head>"
 	    "<h1>List of incoming messages</h1><br>");
 
@@ -1204,12 +1206,10 @@ next_line:
 				ptr += 4;
 				len = strlen(ptr);
 
-				fprintf(io, "<meta charset=\"UTF-8\">");
-
 				if (fwrite(ptr, 1, len, io) != len)
 					goto done;
 
-				fprintf(io, "</meta><br>");
+				fprintf(io, "<br>");
 			}
 		}
 	}
