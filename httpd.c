@@ -933,6 +933,7 @@ handle_httpd_connection(int fd)
 	int len;
 	int num;
 	int x;
+	int y;
 	int page;
 
 	io = fdopen(fd, "r+");
@@ -1149,7 +1150,6 @@ next_line:
 	    "\r\n"
 	    "<html><head><title>AsteriskMail Inbox</title>"
 	    "<meta HTTP-EQUIV=\"refresh\" CONTENT=\"120\">"
-	    "<meta charset=\"UTF-8\">"
 	    "</meta>"
 	    "</head>"
 	    "<h1>List of incoming messages</h1><br>");
@@ -1206,10 +1206,20 @@ next_line:
 				ptr += 4;
 				len = strlen(ptr);
 
+				for (y = 0; y != len; y++) {
+					if ((ptr[y] & 0xC0) == 0xC0)
+						break;
+				}
+				/* automagically detect UTF-8 charset */
+				if (y == len)
+					fprintf(io, "<meta charset=\"ISO-8859-1\">");
+				else
+					fprintf(io, "<meta charset=\"UTF-8\">");
+
 				if (fwrite(ptr, 1, len, io) != len)
 					goto done;
 
-				fprintf(io, "<br>");
+				fprintf(io, "</meta><br>");
 			}
 		}
 	}
