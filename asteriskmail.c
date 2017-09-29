@@ -148,7 +148,7 @@ handle_import(struct am_message *pam)
 	while (y > -1)
 		((uint8_t *)pam->data)[y--] = 0;
 
-	strcpy(pam->data, "Content-Type: text/html; charset=iso-8859-1\r\n");
+	strcpy(pam->data, "Content-Type: text/html; charset=utf-8\r\n");
 
 	/* remove zeroed bytes */
 	for (x = y = 0; x != pam->bytes; x++) {

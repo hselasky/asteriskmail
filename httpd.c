@@ -472,7 +472,6 @@ base64_get_iso8859_latin1(char **pptr)
 		ch = 0xE0;
 		break;
 	default:
-		ch = '?';
 		break;
 	}
 	return ((uint8_t)ch);
