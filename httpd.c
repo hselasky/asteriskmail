@@ -1204,7 +1204,7 @@ next_line:
 				ptr += 4;
 				len = strlen(ptr);
 
-				fprintf(io, "<meta charset=\"ISO-8859-1\">");
+				fprintf(io, "<meta charset=\"UTF-8\">");
 
 				if (fwrite(ptr, 1, len, io) != len)
 					goto done;
