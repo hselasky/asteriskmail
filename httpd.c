@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <iconv.h>
 
 #include "asteriskmail.h"
 
@@ -933,7 +934,6 @@ handle_httpd_connection(int fd)
 	int len;
 	int num;
 	int x;
-	int y;
 	int page;
 
 	io = fdopen(fd, "r+");
@@ -1026,19 +1026,42 @@ next_line:
 			/* make a copy of outgoing messages */
 			pamm = handle_create_message();
 			if (pamm != NULL) {
+				iconv_t cd = iconv_open("UTF-8", "ISO-8859-1");
+
 				snprintf(smtpd_buf, sizeof(smtpd_buf),
 				    "Subject: SMS\r\n"
 				    "From: home\r\n"
 				    "To: %s <%s>\r\n"
-				    "Content-Type: text/html; charset=iso-8859-1\r\n"
+				    "Content-Type: text/html; charset=utf-8\r\n"
 				    "\r\n\r\n%s",
 				    phone, phone, message);
 				ptr = smtpd_buf;
 				while (*ptr) {
-					if (handle_append_message(pamm, *ptr))
-						break;
+					if (cd >= 0) {
+						char temp[8] = {};
+						char *dst = temp;
+						char *ppp = temp;
+						size_t dstlen = sizeof(temp);
+						char *src = ptr;
+						size_t srclen = 1;
+
+						iconv(cd, &src, &srclen, &dst, &dstlen);
+
+						for (; ppp != dst; ppp++) {
+							if (handle_append_message(pamm, *ppp))
+								break;
+						}
+						if (ppp != dst)
+							break;
+					} else {
+						if (handle_append_message(pamm, *ptr))
+							break;
+					}		  
 					ptr++;
 				}
+				/* close caracter conversion handle */
+				if (cd >= 0)
+					iconv_close(cd);
 				/* zero terminate */
 				if (*ptr == 0 &&
 				    handle_append_message(pamm, 0) == 0) {
@@ -1150,6 +1173,7 @@ next_line:
 	    "\r\n"
 	    "<html><head><title>AsteriskMail Inbox</title>"
 	    "<meta HTTP-EQUIV=\"refresh\" CONTENT=\"120\">"
+	    "<meta charset=\"UTF-8\">"
 	    "</meta>"
 	    "</head>"
 	    "<h1>List of incoming messages</h1><br>");
@@ -1206,20 +1230,10 @@ next_line:
 				ptr += 4;
 				len = strlen(ptr);
 
-				for (y = 0; y != len; y++) {
-					if ((ptr[y] & 0xC0) == 0xC0)
-						break;
-				}
-				/* automagically detect UTF-8 charset */
-				if (y == len)
-					fprintf(io, "<meta charset=\"ISO-8859-1\">");
-				else
-					fprintf(io, "<meta charset=\"UTF-8\">");
-
 				if (fwrite(ptr, 1, len, io) != len)
 					goto done;
 
-				fprintf(io, "</meta><br>");
+				fprintf(io, "<br>");
 			}
 		}
 	}
