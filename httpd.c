@@ -32,6 +32,12 @@
 static uint32_t base64_bits;
 static uint32_t base64_value;
 
+static int
+is_separator(const char ch)
+{
+	return (ch == '-' || ch == '\t' || ch == '\n' || ch == ' ');
+}
+
 const int
 base64_get(char **pptr)
 {
@@ -922,9 +928,11 @@ handle_httpd_decode_string(char *ptr)
 void
 handle_httpd_connection(int fd)
 {
+	enum { MAX_LENGTH = 140 };
+
 	static int curr_sms_id;
 	struct am_message *pamm;
-	char message_buf[512];
+	char message_buf[2048];
 	char smtpd_buf[512];
 	char system_cmd[512 + 128];
 	char *hdr;
@@ -935,6 +943,7 @@ handle_httpd_connection(int fd)
 	int num;
 	int x;
 	int page;
+	int y;
 
 	io = fdopen(fd, "r+");
 	if (io == NULL)
@@ -1071,19 +1080,52 @@ next_line:
 				}
 			}
 
-			snprintf(system_cmd, sizeof(system_cmd),
-			    "/usr/local/sbin/asterisk"
-			    " -rx \"dongle sms dongle0 %s "
-			    "\\\"%s\\\"\"", phone, message_buf);
+			ptr = message_buf;
+			while (1) {
+				len = strlen(ptr);
+				if (len == 0)
+					break;
 
-			if (system(system_cmd) != 0) {
-				page = 3;
-				goto next_line;
+				/* get maximum length */
+				x = len;
+				if (x > MAX_LENGTH)
+					x = MAX_LENGTH;
+
+				/* try word separation */
+				while (x--) {
+					if (is_separator(ptr[x])) {
+						while (is_separator(ptr[x]) && x < MAX_LENGTH)
+							x++;
+						break;
+					}
+				}
+
+				/* send full text */
+				if (x < 1) {
+					x = len;
+					if (x > MAX_LENGTH)
+						x = MAX_LENGTH;
+				}
+
+				y = ptr[x];
+				ptr[x] = 0;
+
+				snprintf(system_cmd, sizeof(system_cmd),
+				    "/usr/local/sbin/asterisk"
+				    " -rx \"dongle sms dongle0 %s "
+				    "\\\"%s\\\"\"", phone, ptr);
+
+				if (system(system_cmd) != 0) {
+					page = 3;
+					goto next_line;
+				}
+
+				/* nice operation a bit */
+				usleep(250000);
+
+				ptr[x] = y;
+				ptr += x;
 			}
-
-			/* nice operation a bit */
-			usleep(250000);
-
 			curr_sms_id++;
 			if (curr_sms_id >= 10000)
 				curr_sms_id = 0;
@@ -1142,8 +1184,8 @@ next_line:
 		    "<input type=\"tel\" maxlength=\"30\" name=\"phone\"></div></th></tr>"
 		    "<tr><th>"
 		    "<div align=\"right\">Message:</div></th><th><div align=\"left\">"
-		    "<textarea maxlength=\"140\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
-		    "wrap=\"logical\" rows=\"12\" cols=\"32\">"
+		    "<textarea maxlength=\"%d\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
+		    "wrap=\"logical\" rows=\"12\" cols=\"32\" type=\"password\">"
 		    "</textarea></div></th></tr>"
 		    "<tr><th></th><th>"
 		    "<div align=\"right\"><input type=\"submit\" value=\"Submit\"></div>"
@@ -1151,7 +1193,7 @@ next_line:
 		    "<input type=\"hidden\" name=\"id\" value=\"%d\"> "
 		    "</form>"
 		    "<br><a HREF=\"index.html\">Click here to go back</a>"
-		    "</html>", curr_sms_id);
+		    "</html>", MAX_LENGTH * 10, curr_sms_id);
 		goto done;
 	case 4:
 		break;
