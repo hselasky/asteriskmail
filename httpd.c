@@ -1088,22 +1088,20 @@ next_line:
 
 				/* get maximum length */
 				x = len;
-				if (x > MAX_LENGTH)
+				if (x > MAX_LENGTH) {
 					x = MAX_LENGTH;
 
-				/* try word separation */
-				while (x--) {
-					if (is_separator(ptr[x])) {
-						while (is_separator(ptr[x]) && x < MAX_LENGTH)
-							x++;
-						break;
+					/* try word separation */
+					while (x--) {
+						if (is_separator(ptr[x])) {
+							while (is_separator(ptr[x]) && x < MAX_LENGTH)
+								x++;
+							break;
+						}
 					}
-				}
 
-				/* send full text */
-				if (x < 1) {
-					x = len;
-					if (x > MAX_LENGTH)
+					/* send full text */
+					if (x < 1)
 						x = MAX_LENGTH;
 				}
 
