@@ -933,7 +933,7 @@ handle_httpd_connection(int fd)
 	static int curr_sms_id;
 	struct am_message *pamm;
 	char message_buf[2048];
-	char smtpd_buf[512];
+	char smtpd_buf[2048];
 	char system_cmd[512 + 128];
 	char *hdr;
 	char *ptr;
