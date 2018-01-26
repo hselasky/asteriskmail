@@ -47,7 +47,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#define	ASTERISKMAIL_LINE_MAX 1024
+#define	ASTERISKMAIL_LINE_MAX 2048
 #define	ASTERISKMAIL_STRING_MAX	128
 #define	ASTERISKMAIL_BUF_MAX 4096
 #define	ASTERISKMAIL_SOCK_MAX 32
