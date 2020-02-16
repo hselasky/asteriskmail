@@ -1281,7 +1281,11 @@ next_line:
 						goto done;
 				}
 				telno[offset] = 0;
-				fprintf(io, " - <a href=\"/send_sms.cgi?&phone=%s\">reply</a></h2><br>", telno);
+
+				if (offset != 0)
+					fprintf(io, " - <a href=\"/sms_form.html?&phone=%s\">reply</a></h2><br>", telno);
+				else
+					fprintf(io, "</h2><br>");
 			} else {
 				fprintf(io, "</h2><br>");
 			}
