@@ -237,6 +237,7 @@ handle_create_message(void)
 static int
 asteriskmail_do_listen(const char *host, const char *port, int buffer, struct pollfd *pfd, int num_sock)
 {
+	const struct timeval timeout = { .tv_sec = 4 };
 	struct addrinfo hints;
 	struct addrinfo *res;
 	struct addrinfo *res0;
@@ -268,6 +269,9 @@ asteriskmail_do_listen(const char *host, const char *port, int buffer, struct po
 		setsockopt(s, SOL_SOCKET, SO_SNDBUF, &buffer, (int)sizeof(buffer));
 		setsockopt(s, SOL_SOCKET, SO_RCVBUF, &buffer, (int)sizeof(buffer));
 
+		setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &timeout, (int)sizeof(timeout));
+		setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, (int)sizeof(timeout));
+		
 		if (bind(s, res0->ai_addr, res0->ai_addrlen) == 0) {
 			if (listen(s, 1) == 0) {
 				if (ns < num_sock) {
