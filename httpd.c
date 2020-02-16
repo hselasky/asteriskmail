@@ -939,6 +939,7 @@ handle_httpd_connection(int fd)
 	char *hdr;
 	char *ptr;
 	char *line;
+	char default_phone[64] = {};
 	FILE *io;
 	int len;
 	int num;
@@ -1133,6 +1134,17 @@ next_line:
 		    strstr(line, "GET /index.html") == line)) {
 			page = 4;
 		} else if (page < 0 && strstr(line, "GET /sms_form.html") == line) {
+			char *phone;
+
+			phone = strstr(line, "&phone=");
+			if (phone == NULL)
+				phone = strstr(line, "?phone=");
+			if (phone != NULL) {
+				phone += 7;
+				handle_httpd_decode_string(phone);
+				strlcpy(default_phone, phone, sizeof(default_phone));
+			}
+
 			page = 5;
 		}
 	}
@@ -1180,7 +1192,7 @@ next_line:
 		    "<tr><th COLSPAN=\"2\">Send SMS</th></tr>"
 		    "<tr><th>"
 		    "<div align=\"right\">Mobile:</div></th><th><div align=\"left\">"
-		    "<input type=\"tel\" maxlength=\"30\" name=\"phone\"></div></th></tr>"
+		    "<input type=\"tel\" maxlength=\"30\" name=\"phone\" value=\"%s\"></div></th></tr>"
 		    "<tr><th>"
 		    "<div align=\"right\">Message:</div></th><th><div align=\"left\">"
 		    "<textarea maxlength=\"%d\" name=\"message\" form=\"smsform\" autocomplete=\"off\" "
@@ -1192,7 +1204,7 @@ next_line:
 		    "<input type=\"hidden\" name=\"id\" value=\"%d\"> "
 		    "</form>"
 		    "<br><a HREF=\"index.html\">Click here to go back</a>"
-		    "</html>", MAX_LENGTH * 10, curr_sms_id);
+		    "</html>", default_phone, MAX_LENGTH * 10, curr_sms_id);
 		goto done;
 	case 4:
 		break;
@@ -1268,11 +1280,12 @@ next_line:
 					ch = *ptr++;
 					if (isprint(ch) == 0)
 						break;
-					if (isdigit(ch) || ch == '+') {
-						if (done == false) {
-							if (offset < (uint8_t)(sizeof(telno) - 1))
-								telno[offset++] = ch;
-						}
+					if (isdigit(ch) && done == false && offset < (uint8_t)(sizeof(telno) - 1)) {
+						telno[offset++] = ch;
+					} else if (ch == '+' && done == false && offset < (uint8_t)(sizeof(telno) - 3)) {
+						telno[offset++] = '%';
+						telno[offset++] = '2';
+						telno[offset++] = 'b';
 					} else {
 						if (offset != 0)
 							done = true;
@@ -1283,7 +1296,7 @@ next_line:
 				telno[offset] = 0;
 
 				if (offset != 0)
-					fprintf(io, " - <a href=\"/sms_form.html?&phone=%s\">reply</a></h2><br>", telno);
+					fprintf(io, " - <a href=\"/sms_form.html?phone=%s\">reply</a></h2><br>", telno);
 				else
 					fprintf(io, "</h2><br>");
 			} else {
