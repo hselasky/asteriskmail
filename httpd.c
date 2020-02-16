@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2014-2020 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,6 +24,7 @@
  */
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <iconv.h>
 
@@ -1232,6 +1233,10 @@ next_line:
 			fprintf(io, "<h2>Message %d of %d: ", x, num);
 
 			hdr = strstr(pamm->data, "\r\n\r\n");
+			if (hdr == NULL)
+				hdr = pamm->data + strlen(pamm->data);
+			else
+				hdr += 4;
 
 			ptr = strafter(pamm->data, "\r\nSubject: ");
 			if (ptr == NULL)
@@ -1253,26 +1258,52 @@ next_line:
 			if (ptr == NULL)
 				ptr = strafter(pamm->data, "\nFrom: ");
 			if (ptr != NULL && ptr <= hdr) {
+				bool done = false;
+				uint8_t offset = 0;
+				char telno[64];
+
 				while (1) {
 					char ch;
 
 					ch = *ptr++;
 					if (isprint(ch) == 0)
 						break;
+					if (isdigit(ch) || ch == '+') {
+						if (done == false) {
+							if (offset < (uint8_t)(sizeof(telno) - 1))
+								telno[offset++] = ch;
+						}
+					} else {
+						if (offset != 0)
+							done = true;
+					}
 					if (fwrite(&ch, 1, 1, io) != 1)
 						goto done;
 				}
+				telno[offset] = 0;
+				fprintf(io, " - <a href=\"/send_sms.cgi?&phone=%s\">reply</a></h2><br>", telno);
+			} else {
+				fprintf(io, "</h2><br>");
 			}
-			fprintf(io, "</h2><br>");
 
 			ptr = hdr;
-			if (ptr != NULL) {
-				ptr += 4;
-				len = strlen(ptr);
-
-				if (fwrite(ptr, 1, len, io) != len)
-					goto done;
-
+			if (ptr != NULL && ptr[0] != 0) {
+				while (*ptr != 0) {
+					if (*ptr == '<') {
+						if (fwrite("&lt;", 1, 4, io) != 4)
+							goto done;
+					} else if (*ptr == '>') {
+						if (fwrite("&gt;", 1, 4, io) != 4)
+							goto done;
+					} else if (*ptr == '\"') {
+						if (fwrite("&quot;", 1, 6, io) != 6)
+							goto done;
+					} else {
+						if (fwrite(ptr, 1, 1, io) != 1)
+							goto done;
+					}
+					ptr++;
+				}
 				fprintf(io, "<br>");
 			}
 		}
