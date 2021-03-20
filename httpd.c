@@ -581,7 +581,6 @@ iso8859_to_sms(char **pptr, char ch)
 		*ptr++ = 0x1B;
 		ch = 0x40;
 		break;
-		break;
 	case 0xC6:
 		ch = 0x1C;
 		break;
