@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2014-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -168,10 +168,10 @@ handle_import(struct am_message *pam)
 	gsm = hdr;
 
 	/* reset parsing */
-	base64_get_iso8859_latin1(NULL);
+	base64_get_utf8(NULL);
 
 	while (1) {
-		x = base64_get_iso8859_latin1(&hdr);
+		x = base64_get_utf8(&hdr);
 		if (x < 0)
 			break;
 		*gsm++ = x;

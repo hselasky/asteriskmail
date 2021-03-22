@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014-2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2014-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
-#include <iconv.h>
 
 #include "asteriskmail.h"
 
@@ -85,7 +84,7 @@ base64_get(char **pptr)
 }
 
 const int
-base64_get_iso8859_latin1(char **pptr)
+base64_get_utf8(char **pptr)
 {
 	int ch;
 
@@ -97,49 +96,37 @@ base64_get_iso8859_latin1(char **pptr)
 		ch = 0x40;
 		break;
 	case 0x01:
-		ch = 0xA3;
+	case 0x03:
+	case 0x04:
+	case 0x05:
+	case 0x06:
+	case 0x07:
+	case 0x08:
+	case 0x09:
+	case 0x0B:
+	case 0x0C:
+	case 0x0E:
+	case 0x0F:
+	case 0x1C:
+	case 0x1D:
+	case 0x1E:
+	case 0x1F:
+	case 0x40:
+	case 0x5B:
+	case 0x5C:
+	case 0x5D:
+	case 0x5E:
+	case 0x5F:
+	case 0x60:
+	case 0x7B:
+	case 0x7C:
+	case 0x7D:
+	case 0x7E:
+	case 0x7F:
+		ch = '?';
 		break;
 	case 0x02:
 		ch = 0x24;
-		break;
-	case 0x03:
-		ch = 0xA5;
-		break;
-	case 0x04:
-		ch = 0xE8;
-		break;
-	case 0x05:
-		ch = 0xE9;
-		break;
-	case 0x06:
-		ch = 0xF9;
-		break;
-	case 0x07:
-		ch = 0xEC;
-		break;
-	case 0x08:
-		ch = 0xF2;
-		break;
-	case 0x09:
-		ch = 0xC7;
-		break;
-	case 0x0A:
-		ch = 0x0A;
-		break;
-	case 0x0B:
-		ch = 0xD8;
-		break;
-	case 0x0C:
-		ch = 0xF8;
-		break;
-	case 0x0D:
-		ch = 0x0D;
-		break;
-	case 0x0E:
-		ch = 0xC5;
-		break;
-	case 0x0F:
-		ch = 0xE5;
 		break;
 	case 0x11:
 		ch = 0x5F;
@@ -179,314 +166,14 @@ base64_get_iso8859_latin1(char **pptr)
 			break;
 		}
 		break;
-	case 0x1C:
-		ch = 0xC6;
-		break;
-	case 0x1D:
-		ch = 0xE6;
-		break;
-	case 0x1E:
-		ch = 0xDF;
-		break;
-	case 0x1F:
-		ch = 0xC9;
-		break;
-	case 0x20:
-		ch = 0x20;
-		break;
-	case 0x21:
-		ch = 0x21;
-		break;
-	case 0x22:
-		ch = 0x22;
-		break;
-	case 0x23:
-		ch = 0x23;
-		break;
-	case 0x24:
-		ch = 0xA4;
-		break;
-	case 0x25:
-		ch = 0x25;
-		break;
-	case 0x26:
-		ch = 0x26;
-		break;
-	case 0x27:
-		ch = 0x27;
-		break;
-	case 0x28:
-		ch = 0x28;
-		break;
-	case 0x29:
-		ch = 0x29;
-		break;
-	case 0x2A:
-		ch = 0x2A;
-		break;
-	case 0x2B:
-		ch = 0x2B;
-		break;
-	case 0x2C:
-		ch = 0x2C;
-		break;
-	case 0x2D:
-		ch = 0x2D;
-		break;
-	case 0x2E:
-		ch = 0x2E;
-		break;
-	case 0x2F:
-		ch = 0x2F;
-		break;
-	case 0x30:
-		ch = 0x30;
-		break;
-	case 0x31:
-		ch = 0x31;
-		break;
-	case 0x32:
-		ch = 0x32;
-		break;
-	case 0x33:
-		ch = 0x33;
-		break;
-	case 0x34:
-		ch = 0x34;
-		break;
-	case 0x35:
-		ch = 0x35;
-		break;
-	case 0x36:
-		ch = 0x36;
-		break;
-	case 0x37:
-		ch = 0x37;
-		break;
-	case 0x38:
-		ch = 0x38;
-		break;
-	case 0x39:
-		ch = 0x39;
-		break;
-	case 0x3A:
-		ch = 0x3A;
-		break;
-	case 0x3B:
-		ch = 0x3B;
-		break;
-	case 0x3C:
-		ch = 0x3C;
-		break;
-	case 0x3D:
-		ch = 0x3D;
-		break;
-	case 0x3E:
-		ch = 0x3E;
-		break;
-	case 0x3F:
-		ch = 0x3F;
-		break;
-	case 0x40:
-		ch = 0xA1;
-		break;
-	case 0x41:
-		ch = 0x41;
-		break;
-	case 0x42:
-		ch = 0x42;
-		break;
-	case 0x43:
-		ch = 0x43;
-		break;
-	case 0x44:
-		ch = 0x44;
-		break;
-	case 0x45:
-		ch = 0x45;
-		break;
-	case 0x46:
-		ch = 0x46;
-		break;
-	case 0x47:
-		ch = 0x47;
-		break;
-	case 0x48:
-		ch = 0x48;
-		break;
-	case 0x49:
-		ch = 0x49;
-		break;
-	case 0x4A:
-		ch = 0x4A;
-		break;
-	case 0x4B:
-		ch = 0x4B;
-		break;
-	case 0x4C:
-		ch = 0x4C;
-		break;
-	case 0x4D:
-		ch = 0x4D;
-		break;
-	case 0x4E:
-		ch = 0x4E;
-		break;
-	case 0x4F:
-		ch = 0x4F;
-		break;
-	case 0x50:
-		ch = 0x50;
-		break;
-	case 0x51:
-		ch = 0x51;
-		break;
-	case 0x52:
-		ch = 0x52;
-		break;
-	case 0x53:
-		ch = 0x53;
-		break;
-	case 0x54:
-		ch = 0x54;
-		break;
-	case 0x55:
-		ch = 0x55;
-		break;
-	case 0x56:
-		ch = 0x56;
-		break;
-	case 0x57:
-		ch = 0x57;
-		break;
-	case 0x58:
-		ch = 0x58;
-		break;
-	case 0x59:
-		ch = 0x59;
-		break;
-	case 0x5A:
-		ch = 0x5A;
-		break;
-	case 0x5B:
-		ch = 0xC4;
-		break;
-	case 0x5C:
-		ch = 0xD6;
-		break;
-	case 0x5D:
-		ch = 0xD1;
-		break;
-	case 0x5E:
-		ch = 0xDC;
-		break;
-	case 0x5F:
-		ch = 0xA7;
-		break;
-	case 0x60:
-		ch = 0xBF;
-		break;
-	case 0x61:
-		ch = 0x61;
-		break;
-	case 0x62:
-		ch = 0x62;
-		break;
-	case 0x63:
-		ch = 0x63;
-		break;
-	case 0x64:
-		ch = 0x64;
-		break;
-	case 0x65:
-		ch = 0x65;
-		break;
-	case 0x66:
-		ch = 0x66;
-		break;
-	case 0x67:
-		ch = 0x67;
-		break;
-	case 0x68:
-		ch = 0x68;
-		break;
-	case 0x69:
-		ch = 0x69;
-		break;
-	case 0x6A:
-		ch = 0x6A;
-		break;
-	case 0x6B:
-		ch = 0x6B;
-		break;
-	case 0x6C:
-		ch = 0x6C;
-		break;
-	case 0x6D:
-		ch = 0x6D;
-		break;
-	case 0x6E:
-		ch = 0x6E;
-		break;
-	case 0x6F:
-		ch = 0x6F;
-		break;
-	case 0x70:
-		ch = 0x70;
-		break;
-	case 0x71:
-		ch = 0x71;
-		break;
-	case 0x72:
-		ch = 0x72;
-		break;
-	case 0x73:
-		ch = 0x73;
-		break;
-	case 0x74:
-		ch = 0x74;
-		break;
-	case 0x75:
-		ch = 0x75;
-		break;
-	case 0x76:
-		ch = 0x76;
-		break;
-	case 0x77:
-		ch = 0x77;
-		break;
-	case 0x78:
-		ch = 0x78;
-		break;
-	case 0x79:
-		ch = 0x79;
-		break;
-	case 0x7A:
-		ch = 0x7A;
-		break;
-	case 0x7B:
-		ch = 0xE4;
-		break;
-	case 0x7C:
-		ch = 0xF6;
-		break;
-	case 0x7D:
-		ch = 0xF1;
-		break;
-	case 0x7E:
-		ch = 0xFC;
-		break;
-	case 0x7F:
-		ch = 0xE0;
-		break;
 	default:
 		break;
 	}
 	return ((uint8_t)ch);
 }
 
-int
-iso8859_to_sms(char **pptr, char ch)
+static int
+utf8_to_sms(char **pptr, char ch)
 {
 	char *ptr = *pptr;
 
@@ -497,50 +184,14 @@ iso8859_to_sms(char **pptr, char ch)
 	case 0x40:
 		ch = 0x00;
 		break;
-	case 0xA3:
-		ch = 0x01;
-		break;
 	case 0x24:
 		ch = 0x02;
-		break;
-	case 0xA5:
-		ch = 0x03;
-		break;
-	case 0xE8:
-		ch = 0x04;
-		break;
-	case 0xE9:
-		ch = 0x05;
-		break;
-	case 0xF9:
-		ch = 0x06;
-		break;
-	case 0xEC:
-		ch = 0x07;
-		break;
-	case 0xF2:
-		ch = 0x08;
-		break;
-	case 0xC7:
-		ch = 0x09;
-		break;
-	case 0x0A:
-		ch = 0x0A;
 		break;
 	case 0xD8:
 		ch = 0x0B;
 		break;
 	case 0xF8:
 		ch = 0x0C;
-		break;
-	case 0x0D:
-		ch = 0x0D;
-		break;
-	case 0xC5:
-		ch = 0x0E;
-		break;
-	case 0xE5:
-		ch = 0x0F;
 		break;
 	case 0x5F:
 		ch = 0x11;
@@ -581,310 +232,11 @@ iso8859_to_sms(char **pptr, char ch)
 		*ptr++ = 0x1B;
 		ch = 0x40;
 		break;
-	case 0xC6:
-		ch = 0x1C;
-		break;
-	case 0xE6:
-		ch = 0x1D;
-		break;
-	case 0xDF:
-		ch = 0x1E;
-		break;
-	case 0xC9:
-		ch = 0x1F;
-		break;
-	case 0x20:
-		ch = 0x20;
-		break;
-	case 0x21:
-		ch = 0x21;
-		break;
 	case 0x22:
 		/* XXX don't forward quotes */
-		/* ch = 0x22; */
 		ch = 0x27;
-		break;
-	case 0x23:
-		ch = 0x23;
-		break;
-	case 0xA4:
-		ch = 0x24;
-		break;
-	case 0x25:
-		ch = 0x25;
-		break;
-	case 0x26:
-		ch = 0x26;
-		break;
-	case 0x27:
-		ch = 0x27;
-		break;
-	case 0x28:
-		ch = 0x28;
-		break;
-	case 0x29:
-		ch = 0x29;
-		break;
-	case 0x2A:
-		ch = 0x2A;
-		break;
-	case 0x2B:
-		ch = 0x2B;
-		break;
-	case 0x2C:
-		ch = 0x2C;
-		break;
-	case 0x2D:
-		ch = 0x2D;
-		break;
-	case 0x2E:
-		ch = 0x2E;
-		break;
-	case 0x2F:
-		ch = 0x2F;
-		break;
-	case 0x30:
-		ch = 0x30;
-		break;
-	case 0x31:
-		ch = 0x31;
-		break;
-	case 0x32:
-		ch = 0x32;
-		break;
-	case 0x33:
-		ch = 0x33;
-		break;
-	case 0x34:
-		ch = 0x34;
-		break;
-	case 0x35:
-		ch = 0x35;
-		break;
-	case 0x36:
-		ch = 0x36;
-		break;
-	case 0x37:
-		ch = 0x37;
-		break;
-	case 0x38:
-		ch = 0x38;
-		break;
-	case 0x39:
-		ch = 0x39;
-		break;
-	case 0x3A:
-		ch = 0x3A;
-		break;
-	case 0x3B:
-		ch = 0x3B;
-		break;
-	case 0x3C:
-		ch = 0x3C;
-		break;
-	case 0x3D:
-		ch = 0x3D;
-		break;
-	case 0x3E:
-		ch = 0x3E;
-		break;
-	case 0x3F:
-		ch = 0x3F;
-		break;
-	case 0xA1:
-		ch = 0x40;
-		break;
-	case 0x41:
-		ch = 0x41;
-		break;
-	case 0x42:
-		ch = 0x42;
-		break;
-	case 0x43:
-		ch = 0x43;
-		break;
-	case 0x44:
-		ch = 0x44;
-		break;
-	case 0x45:
-		ch = 0x45;
-		break;
-	case 0x46:
-		ch = 0x46;
-		break;
-	case 0x47:
-		ch = 0x47;
-		break;
-	case 0x48:
-		ch = 0x48;
-		break;
-	case 0x49:
-		ch = 0x49;
-		break;
-	case 0x4A:
-		ch = 0x4A;
-		break;
-	case 0x4B:
-		ch = 0x4B;
-		break;
-	case 0x4C:
-		ch = 0x4C;
-		break;
-	case 0x4D:
-		ch = 0x4D;
-		break;
-	case 0x4E:
-		ch = 0x4E;
-		break;
-	case 0x4F:
-		ch = 0x4F;
-		break;
-	case 0x50:
-		ch = 0x50;
-		break;
-	case 0x51:
-		ch = 0x51;
-		break;
-	case 0x52:
-		ch = 0x52;
-		break;
-	case 0x53:
-		ch = 0x53;
-		break;
-	case 0x54:
-		ch = 0x54;
-		break;
-	case 0x55:
-		ch = 0x55;
-		break;
-	case 0x56:
-		ch = 0x56;
-		break;
-	case 0x57:
-		ch = 0x57;
-		break;
-	case 0x58:
-		ch = 0x58;
-		break;
-	case 0x59:
-		ch = 0x59;
-		break;
-	case 0x5A:
-		ch = 0x5A;
-		break;
-	case 0xC4:
-		ch = 0x5B;
-		break;
-	case 0xD6:
-		ch = 0x5C;
-		break;
-	case 0xD1:
-		ch = 0x5D;
-		break;
-	case 0xDC:
-		ch = 0x5E;
-		break;
-	case 0xA7:
-		ch = 0x5F;
-		break;
-	case 0xBF:
-		ch = 0x60;
-		break;
-	case 0x61:
-		ch = 0x61;
-		break;
-	case 0x62:
-		ch = 0x62;
-		break;
-	case 0x63:
-		ch = 0x63;
-		break;
-	case 0x64:
-		ch = 0x64;
-		break;
-	case 0x65:
-		ch = 0x65;
-		break;
-	case 0x66:
-		ch = 0x66;
-		break;
-	case 0x67:
-		ch = 0x67;
-		break;
-	case 0x68:
-		ch = 0x68;
-		break;
-	case 0x69:
-		ch = 0x69;
-		break;
-	case 0x6A:
-		ch = 0x6A;
-		break;
-	case 0x6B:
-		ch = 0x6B;
-		break;
-	case 0x6C:
-		ch = 0x6C;
-		break;
-	case 0x6D:
-		ch = 0x6D;
-		break;
-	case 0x6E:
-		ch = 0x6E;
-		break;
-	case 0x6F:
-		ch = 0x6F;
-		break;
-	case 0x70:
-		ch = 0x70;
-		break;
-	case 0x71:
-		ch = 0x71;
-		break;
-	case 0x72:
-		ch = 0x72;
-		break;
-	case 0x73:
-		ch = 0x73;
-		break;
-	case 0x74:
-		ch = 0x74;
-		break;
-	case 0x75:
-		ch = 0x75;
-		break;
-	case 0x76:
-		ch = 0x76;
-		break;
-	case 0x77:
-		ch = 0x77;
-		break;
-	case 0x78:
-		ch = 0x78;
-		break;
-	case 0x79:
-		ch = 0x79;
-		break;
-	case 0x7A:
-		ch = 0x7A;
-		break;
-	case 0xE4:
-		ch = 0x7B;
-		break;
-	case 0xF6:
-		ch = 0x7C;
-		break;
-	case 0xF1:
-		ch = 0x7D;
-		break;
-	case 0xFC:
-		ch = 0x7E;
-		break;
-	case 0xE0:
-		ch = 0x7F;
 		break;
 	default:
-		ch = 0x3F;
 		break;
 	}
 	*ptr++ = ch;
@@ -1026,7 +378,7 @@ next_line:
 			ptr = message;
 			hdr = message_buf;
 			while (*ptr) {
-				if (iso8859_to_sms(&hdr, *ptr++) < 0) {
+				if (utf8_to_sms(&hdr, *ptr++) < 0) {
 					page = 2;
 					goto next_line;
 				}
@@ -1036,8 +388,6 @@ next_line:
 			/* make a copy of outgoing messages */
 			pamm = handle_create_message();
 			if (pamm != NULL) {
-				iconv_t cd = iconv_open("UTF-8", "ISO-8859-1");
-
 				snprintf(smtpd_buf, sizeof(smtpd_buf),
 				    "Subject: SMS\r\n"
 				    "From: home\r\n"
@@ -1047,31 +397,10 @@ next_line:
 				    phone, phone, message);
 				ptr = smtpd_buf;
 				while (*ptr) {
-					if (cd >= 0) {
-						char temp[8] = {};
-						char *dst = temp;
-						char *ppp = temp;
-						size_t dstlen = sizeof(temp);
-						char *src = ptr;
-						size_t srclen = 1;
-
-						iconv(cd, &src, &srclen, &dst, &dstlen);
-
-						for (; ppp != dst; ppp++) {
-							if (handle_append_message(pamm, *ppp))
-								break;
-						}
-						if (ppp != dst)
-							break;
-					} else {
-						if (handle_append_message(pamm, *ptr))
-							break;
-					}		  
+					if (handle_append_message(pamm, *ptr))
+						break;
 					ptr++;
 				}
-				/* close caracter conversion handle */
-				if (cd >= 0)
-					iconv_close(cd);
 				/* zero terminate */
 				if (*ptr == 0 &&
 				    handle_append_message(pamm, 0) == 0) {
@@ -1186,7 +515,7 @@ next_line:
 		    "\r\n"
 		    "<html><head><title>AsteriskMail Send SMS</title>"
 		    "</head>"
-		    "<br><br><form action=\"send_sms.cgi\" id=\"smsform\" accept-charset=\"ISO-8859-1\">"
+		    "<br><br><form action=\"send_sms.cgi\" id=\"smsform\" accept-charset=\"UTF-8\">"
 		    "<table bgcolor=\"#c0c0c0\">"
 		    "<tr><th COLSPAN=\"2\">Send SMS</th></tr>"
 		    "<tr><th>"

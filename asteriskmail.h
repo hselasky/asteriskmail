@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2014-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,7 +60,7 @@ struct am_message {
 };
 
 extern const int base64_get(char **);
-extern const int base64_get_iso8859_latin1(char **);
+extern const int base64_get_utf8(char **);
 extern char *handle_read_line(FILE *io);
 extern int handle_extract_receip(const char *, char *, int);
 extern int handle_compare(const char *, const char *);
