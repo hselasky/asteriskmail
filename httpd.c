@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2014-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2014-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -169,20 +169,22 @@ base64_get_utf8(char **pptr)
 	default:
 		break;
 	}
-	return ((uint8_t)ch);
+	return (ch);
 }
 
-static int
-utf8_to_sms(char **pptr, char ch)
+static bool
+utf8_to_sms(char **pptr, uint8_t ch)
 {
 	char *ptr = *pptr;
 
 	if (ptr[0] == 0 || ptr[1] == 0)
-		return (-1);
+		return (false);
 
-	switch ((uint8_t)ch) {
+	switch (ch) {
 	case 0x40:
-		ch = 0x00;
+		/* use UTF-8 to avoid zero character */
+		*ptr++ = 0xC1;
+		ch = 0x80;
 		break;
 	case 0x24:
 		ch = 0x02;
@@ -241,7 +243,7 @@ utf8_to_sms(char **pptr, char ch)
 	}
 	*ptr++ = ch;
 	*pptr = ptr;
-	return (0);
+	return (true);
 }
 
 static uint8_t
@@ -378,7 +380,7 @@ next_line:
 			ptr = message;
 			hdr = message_buf;
 			while (*ptr) {
-				if (utf8_to_sms(&hdr, *ptr++) < 0) {
+				if (utf8_to_sms(&hdr, *ptr++) == false) {
 					page = 2;
 					goto next_line;
 				}
