@@ -142,80 +142,6 @@ base64_get_utf8(char **pptr)
 	return (ch);
 }
 
-static bool
-utf8_to_sms(char **pptr, uint8_t ch)
-{
-	char *ptr = *pptr;
-
-	if (ptr[0] == 0 || ptr[1] == 0)
-		return (false);
-
-	switch (ch) {
-	case 0x40:
-		/* use UTF-8 to avoid zero character */
-		*ptr++ = 0xC1;
-		ch = 0x80;
-		break;
-	case 0x24:
-		ch = 0x02;
-		break;
-	case 0xD8:
-		ch = 0x0B;
-		break;
-	case 0xF8:
-		ch = 0x0C;
-		break;
-	case 0x5F:
-		ch = 0x11;
-		break;
-	case 0x0C:
-		*ptr++ = 0x1B;
-		ch = 0x0A;
-		break;
-	case 0x5E:
-		*ptr++ = 0x1B;
-		ch = 0x14;
-		break;
-	case 0x7B:
-		*ptr++ = 0x1B;
-		ch = 0x28;
-		break;
-	case 0x7D:
-		*ptr++ = 0x1B;
-		ch = 0x29;
-		break;
-	case 0x5C:
-		*ptr++ = 0x1B;
-		ch = 0x2F;
-		break;
-	case 0x5B:
-		*ptr++ = 0x1B;
-		ch = 0x3C;
-		break;
-	case 0x7E:
-		*ptr++ = 0x1B;
-		ch = 0x3D;
-		break;
-	case 0x5D:
-		*ptr++ = 0x1B;
-		ch = 0x3E;
-		break;
-	case 0x7C:
-		*ptr++ = 0x1B;
-		ch = 0x40;
-		break;
-	case 0x22:
-		/* XXX don't forward quotes */
-		ch = 0x27;
-		break;
-	default:
-		break;
-	}
-	*ptr++ = ch;
-	*pptr = ptr;
-	return (true);
-}
-
 static uint8_t
 gethex(char ch)
 {
@@ -350,9 +276,11 @@ next_line:
 			ptr = message;
 			hdr = message_buf;
 			while (*ptr) {
-				if (utf8_to_sms(&hdr, *ptr++) == false) {
+				if (*hdr == 0) {
 					page = 2;
 					goto next_line;
+				} else {
+					*hdr++ = *ptr++;
 				}
 			}
 			*hdr++ = 0;
